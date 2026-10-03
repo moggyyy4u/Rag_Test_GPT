@@ -5,7 +5,12 @@ def chat():
     data = request.get_json()
     message = data["message"]
 
-    return{"answer": f"You asked: {message}"}
+    if "normalization" in message.lower():
+        answer="Normalization is the process of organizing data in a database to reduce redundancy and improve data integrity."
+    else:
+        answer="I don't know that yet."
+
+    return{"answer": answer}
 @app.route("/")
 def home():
     return render_template("index.html")
