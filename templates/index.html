@@ -1,9 +1,20 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title> School AI </title>
-    </head>
+<head>
+    <title>School AI</title>
+</head>
+
 <body>
+
     <h1>School AI Chatbot</h1>
+
+    <input id="messageInput" type="text" placeholder="Ask a question...">
+
+    <button onclick="sendMessage()">Send</button>
+
+    <div id="response"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
 </body>
 </html>
