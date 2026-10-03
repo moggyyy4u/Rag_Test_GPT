@@ -16,5 +16,13 @@
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 
+    <h2> Upload a document</h2>
+
+    <input type="file" id="fileInput" accept=".pdf">
+
+    <button onclick="uploadFile()">Upload</button>
+
+    <div id="uploadResponse"></div>
+
 </body>
 </html>
