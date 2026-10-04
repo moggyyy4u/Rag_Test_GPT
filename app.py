@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request 
+from pypdf import PdfReader
+import os
 app = Flask(__name__)
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -15,8 +17,36 @@ def chat():
 @app.route("/upload", methods=["POST"])
 def upload():
     file= request.files["file"]
+   
 
-    file.save("uploads/" + file.filename)
+    file_path = "uploads/" + file.filename
+    file.save(file_path)
+  
+
+    
+
+    
+    reader = PdfReader(file_path)
+    text=""
+
+    for page in reader.pages:
+        text+= page.extract_text() or ""
+
+    chunks=[]
+
+    position =0
+    chunk_size = 500
+    overlap = 100
+
+    while position < len(text):
+        chunk= text[position:position+chunk_size]
+        chunks.append(chunk)
+        position+= chunk_size-overlap
+
+    
+
+
+   
 
     return{"filename": file.filename}
 
