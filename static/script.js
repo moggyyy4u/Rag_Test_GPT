@@ -14,7 +14,13 @@ async function sendMessage() {
 
     const data = await response.json();
 
-    document.getElementById("response").textContent = data.answer;
+    const responseDiv = document.getElementById("response");
+
+   
+    responseDiv.textContent = data.answer;
+
+    
+    console.log("Retrieved chunks:", data.retrieved_chunks);
 }
 
 
