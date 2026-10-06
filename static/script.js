@@ -16,11 +16,21 @@ async function sendMessage() {
 
     const responseDiv = document.getElementById("response");
 
-   
-    responseDiv.textContent = data.answer;
+   responseDiv.innerHTML = `
+   <p><strong>Answer:</strong></p>
+   <p>${data.answer}</p>
 
-    
-    console.log("Retrieved chunks:", data.retrieved_chunks);
+   <p><strong>Sources:</strong></p>
+    `;
+
+    data.sources.forEach((source, index) =>{
+        responseDiv.innerHTML += `
+        <p>
+            ${index +1}.${source.filename} — Page ${source.page}
+        
+        </p>
+    `;
+    });
 }
 
 

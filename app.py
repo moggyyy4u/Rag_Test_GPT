@@ -29,9 +29,18 @@ def chat():
     retrieved_chunks=[]
 
     for i in indices[0]:
-        retrieved_chunks.append(chunks[i])
 
-    context = "\n\n".join(retrieved_chunks)
+        chunk=chunks[i]
+
+        retrieved_chunks.append({
+            "text": chunk["text"],
+            "page": chunk["page"],
+            "filename": chunk["filename"]
+        })
+
+    context = "\n\n".join(
+        chunk["text"] for chunk in retrieved_chunks
+    )
 
     prompt = f"""
 You are a helpful school assistant.
@@ -60,7 +69,8 @@ Answer:
     )
     answer = response["message"]["content"]
     return{
-        "answer": answer
+        "answer": answer,
+        "sources": retrieved_chunks
         
     }
  
@@ -73,27 +83,33 @@ def upload():
     file.save(file_path)
     
     reader = PdfReader(file_path)
-    print("Number of pages:", len(reader.pages))
-    text=""
-
-    for page in reader.pages:
-        text+= page.extract_text() or ""
-
-    print("Extracted text length:", len(text))
-    print("First 200 characters:", text[:200])
+   
 
     chunks=[]
 
-    position =0
+
+
     chunk_size = 500
     overlap = 100
 
-    while position < len(text):
-        chunk= text[position:position+chunk_size]
-        chunks.append(chunk)
-        position+= chunk_size-overlap
+    for page_number, page in enumerate(reader.pages,start=1):
+        page_text =page.extract_text() or ""
 
-    vectors= embedding_model.encode(chunks)
+        position =0
+
+        while position < len(page_text):
+            chunk= page_text[position:position+chunk_size]
+            chunks.append({
+                "text": chunk,
+                "page": page_number,
+                "filename": file.filename
+            })
+            position+= chunk_size-overlap
+
+    texts= [chunk["text"] for chunk in chunks]
+
+
+    vectors= embedding_model.encode(texts)
     print("Number of chunks:", len(chunks))
     print("Vector shape:", vectors.shape)
     dimension = vectors.shape[1]
@@ -103,7 +119,8 @@ def upload():
     return{
         "filename": file.filename,
         "chunks": len(chunks),
-        "vectors": vectors.shape[0]}
+        "vectors": vectors.shape[0]
+        }
 
 @app.route("/")
 def home():
