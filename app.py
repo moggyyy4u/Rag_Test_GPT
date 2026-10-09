@@ -22,21 +22,38 @@ def chat():
     if faiss_index is None or len(chunks)==0:
         return{"answer": "Please upload a document first."}
 
-    question_vector = embedding_model.encode([message])
+    question_vector = embedding_model.encode(
+        [message],
+        normalize_embeddings=True
+        )
 
-    distances, indices = faiss_index.search(question_vector,3)
+    similarities, indices = faiss_index.search(question_vector,3)
+
+    print("Distances:", similarities[0])
+
+    threshold= 0.40
 
     retrieved_chunks=[]
 
-    for i in indices[0]:
+    for score, i in zip(similarities[0],indices[0]):
 
-        chunk=chunks[i]
+        if score>= threshold:
 
-        retrieved_chunks.append({
-            "text": chunk["text"],
-            "page": chunk["page"],
-            "filename": chunk["filename"]
+            chunk=chunks[i]
+
+            retrieved_chunks.append({
+                "text": chunk["text"],
+                "page": chunk["page"],
+                "filename": chunk["filename"]
         })
+    print("Similarities:", similarities[0])
+
+    if len(retrieved_chunks)==0:
+        return{
+            "answer": "I couldn't find the answer in the uploaded document.",
+            "sources": []
+        }
+        
 
     context = "\n\n".join(
         chunk["text"] for chunk in retrieved_chunks
@@ -109,11 +126,14 @@ def upload():
     texts= [chunk["text"] for chunk in chunks]
 
 
-    vectors= embedding_model.encode(texts)
+    vectors= embedding_model.encode(
+        texts,
+        normalize_embeddings = True
+    )
     print("Number of chunks:", len(chunks))
     print("Vector shape:", vectors.shape)
     dimension = vectors.shape[1]
-    faiss_index= faiss.IndexFlatL2(dimension)
+    faiss_index= faiss.IndexFlatIP(dimension)
     faiss_index.add(vectors)
 
     return{
