@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>School AI</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
 </head>
 
 <body>
@@ -12,7 +13,7 @@
 
     <button onclick="sendMessage()">Send</button>
 
-    <div id="response"></div>
+    <div id="chatHistory"></div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 
