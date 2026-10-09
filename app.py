@@ -11,6 +11,7 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 faiss_index = None
 chunks = []
+uploaded_files = set()
 
 
 @app.route("/chat", methods=["POST"])
@@ -96,15 +97,20 @@ Answer:
 def upload():
     global faiss_index, chunks
     file= request.files["file"]
+    if file.filename in uploaded_files:
+        return{
+            "message": "This file has already been uploaded",
+            "filename": file.filename
+        }, 409
     file_path = "uploads/" + file.filename
     file.save(file_path)
     
     reader = PdfReader(file_path)
    
 
-    chunks=[]
 
 
+    new_chunks =[]
 
     chunk_size = 500
     overlap = 100
@@ -116,14 +122,14 @@ def upload():
 
         while position < len(page_text):
             chunk= page_text[position:position+chunk_size]
-            chunks.append({
+            new_chunks.append({
                 "text": chunk,
                 "page": page_number,
                 "filename": file.filename
             })
             position+= chunk_size-overlap
 
-    texts= [chunk["text"] for chunk in chunks]
+    texts= [chunk["text"] for chunk in new_chunks]
 
 
     vectors= embedding_model.encode(
@@ -133,9 +139,13 @@ def upload():
     print("Number of chunks:", len(chunks))
     print("Vector shape:", vectors.shape)
     dimension = vectors.shape[1]
-    faiss_index= faiss.IndexFlatIP(dimension)
+    if faiss_index is None:
+        faiss_index = faiss.IndexFlatIP(dimension)
+
     faiss_index.add(vectors)
 
+    chunks.extend(new_chunks)
+    uploaded_files.add(file.filename)
     return{
         "filename": file.filename,
         "chunks": len(chunks),

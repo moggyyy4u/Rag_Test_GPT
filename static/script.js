@@ -49,5 +49,7 @@ async function uploadFile() {
     const data = await response.json();
 
     document.getElementById("uploadResponse").textContent =
-        `Uploaded: ${data.filename}`;
+        response.ok
+            ?`Uploaded: ${data.filename}`
+            : data.message;
 }
