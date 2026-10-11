@@ -87,10 +87,15 @@ Answer:
         ]
     )
     answer = response["message"]["content"]
+    if "I couldn't find the answer in the uploaded document." in answer:
+        return{
+            "answer": answer,
+            "sources": []
+            
+        }
     return{
         "answer": answer,
         "sources": retrieved_chunks
-        
     }
  
 
