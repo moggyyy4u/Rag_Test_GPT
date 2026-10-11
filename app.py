@@ -60,22 +60,28 @@ def chat():
         chunk["text"] for chunk in retrieved_chunks
     )
 
+    
     prompt = f"""
-You are a helpful school assistant.
+    You are a helpful school assistant.
 
-Answer the user's question using ONLY the information provided in the context.
+    RULES:
+    1. Answer the user's question using ONLY information explicitly stated in the context.
+    2. Do not use outside knowledge, assumptions, or guesses to fill in missing information.
+    3. If the context does not contain enough information to answer the question, reply exactly:
+    "I couldn't find the answer in the uploaded document."
+    4. If only part of the question can be answered, explain what the context supports and clearly state what cannot be found.
+    5. Keep the answer clear and focused on the question.
+    6. Do not claim that the document states something unless the context supports it.
 
-If the answer cannot be found in the context, say:
-"I couldn't find the answer in the uploaded document."
+    Context:
+    {context}
 
-Context:
-{context}
+    Question:
+    {message}
 
-Question:
-{message}
+    Answer:
+    """
 
-Answer:
-"""
     
     response = ollama.chat(
         model ="qwen2.5:3b",
