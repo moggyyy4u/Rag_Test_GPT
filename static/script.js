@@ -78,8 +78,8 @@ async function sendMessage() {
                     hasDocumentContext=data.has_document_context;
                 }
 
-                if (data.type === "token") {
-                    streamedAnswer.textContent+=data.content
+                if (data.type === "token")    {
+                    streamedAnswer.textContent = "Generating answer...";
                 }
                 if (data.type === "complete") {
                     finalData = data;

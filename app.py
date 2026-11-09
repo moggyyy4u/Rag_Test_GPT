@@ -97,55 +97,48 @@ def chat():
     if retrieved_chunks:
     
 
-            prompt = f"""
-            You are a helpful school assistant.
+            
+        prompt = f"""
+        You are a helpful school assistant.
 
-            Answer the user's question using the uploaded document as your primary source.
+        Return ONLY a valid JSON object with exactly these two keys:
+        - "document_answer"
+        - "general_answer"
 
-            Your response MUST follow this exact format:
+        DOCUMENT ANSWER:
+        Answer using ONLY facts directly supported by the uploaded context.
+        If the context does not answer part of the question, do not guess.
 
-            DOCUMENT ANSWER:
-            Write the answer using information from the uploaded context.
+        GENERAL ANSWER:
+        Answer the parts not covered by the uploaded context using accurate general knowledge.
+        Do not repeat information already given in document_answer.
 
-            GENERAL KNOWLEDGE:
-            Write any additional relevant information not covered by the document. If there is none, write NONE.
+        If a section has nothing useful to contribute, use an empty string.
 
-            IMPORTANT:
-            - Always include both headings exactly as written.
-            - Never omit either heading.
-            - Do not put anything before DOCUMENT ANSWER.
-            - Do not change the heading names.
+        Do not include Markdown fences or text outside the JSON object.
 
-            Rules:
-            1. Never invent facts from the document.
-            2. Give accurate examples when requested.
-            3. If uncertain, say so.
-            4. Keep the answer clear and easy for a student to understand.
+        Uploaded context:
+        {context}
 
-            Uploaded context:
-            {context}
+        User question:
+        {message}
+        """
 
-            User question:
-            {message}
-            """
 
     else:
 
         prompt = f"""
         You are a helpful school assistant.
 
-        Answer the user's question using general knowledge.
+        Return ONLY a valid JSON object with exactly these two keys:
+        - "document_answer"
+        - "general_answer"
 
-        GENERAL KNOWLEDGE:
-        Give a clear, accurate and helpful answer.
-        Do not include a DOCUMENT ANSWER section.
-        Do not mention uploaded documents.
+        Set "document_answer" to an empty string.
 
-        Rules:
-        1. Do not invent facts.
-        2. Give accurate examples when requested.
-        3. If uncertain, say so.
-        4. Keep the answer clear and easy for a student to understand.
+        Answer the user's question using accurate general knowledge in "general_answer".
+
+        Do not include Markdown fences or text outside the JSON object.
 
         User question:
         {message}
@@ -184,60 +177,49 @@ def chat():
 
         print("Total generation time:",round(time.perf_counter()-generation_start,2),"seconds")
         
-        document_answer=""
-        general_answer=""
-
-        print("FULL MODEL RESPONSE:",repr(answer))
         
-        lower_answer = answer.lower()
+        document_answer = ""
+        general_answer = ""
 
-        doc_marker = "document answer:"
-        general_marker = "general knowledge:"
+        print("FULL MODEL RESPONSE:", repr(answer))
 
-        doc_start = lower_answer.find(doc_marker)
-        general_start = lower_answer.find(general_marker)
+        try:
+            parsed_answer = json.loads(answer)
 
-        if doc_start != -1 and general_start != -1:
+        except json.JSONDecodeError:
+            try:
+                json_start = answer.find("{")
+                json_end = answer.rfind("}") + 1
 
-            document_answer = answer[
-                doc_start + len(doc_marker):general_start
-            ].strip()
+                if json_start != -1 and json_end > json_start:
+                    parsed_answer = json.loads(answer[json_start:json_end])
+                else:
+                    raise ValueError("No JSON object found")
 
-            general_answer = answer[
-                general_start + len(general_marker):
-            ].strip()
+            except (json.JSONDecodeError, ValueError):
+                parsed_answer = {}
 
-        elif general_start != -1:
+        document_answer = parsed_answer.get("document_answer", "")
+        general_answer = parsed_answer.get("general_answer", "")
 
-            general_answer = answer[
-                general_start + len(general_marker):
-            ].strip()
+        if not isinstance(document_answer, str):
+            document_answer = ""
 
-        elif doc_start != -1:
+        if not isinstance(general_answer, str):
+            general_answer = ""
 
-            document_answer = answer[
-                doc_start + len(doc_marker):
-            ].strip()
-
+        if not document_answer.strip():
+            document_answer = ""
+            sources = []
         else:
-            general_answer = answer.strip()
+            sources = retrieved_chunks
 
-        if len(retrieved_chunks)==0:
-             document_answer=""
-             sources=[]
-        else:
-             sources = retrieved_chunks
+        if not general_answer.strip():
+            general_answer = ""
 
-        if document_answer.upper()in [
-                "NONE",
-                "NONE.",
-                ""
-            ]:
-                document_answer=""
-                sources=[]
+        if not document_answer and not general_answer:
+            general_answer = "I couldn't format the response correctly. Please try again."
 
-        if general_answer.upper() in ["NONE","NONE.",""]:
-                general_answer=""
 
         final_data={
                 "type":"complete",
