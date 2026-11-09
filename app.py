@@ -66,6 +66,9 @@ def chat():
 
         similarities, indices = faiss_index.search(question_vector,3)
 
+        print("Similarities scores: ",similarities[0] )
+        print(f"Retrieved indices: {indices[0]}")
+
         threshold= 0.40
 
         for score, i in zip(similarities[0],indices[0]):
@@ -73,6 +76,11 @@ def chat():
             if score>= threshold:
 
                 chunk=chunks[i]
+
+                print(f"Score: {score}")
+                print(f"Page: {chunk['page']}")
+                print(f"Chunk text: {chunk["text"]}")
+                print("-"*50)
 
                 retrieved_chunks.append({
                     "text": chunk["text"],
@@ -94,12 +102,19 @@ def chat():
 
             Answer the user's question using the uploaded document as your primary source.
 
+            Your response MUST follow this exact format:
+
             DOCUMENT ANSWER:
-            Include facts supported by the uploaded context.
+            Write the answer using information from the uploaded context.
 
             GENERAL KNOWLEDGE:
-            Include additional relevant information not covered by the document.
-            If no additional information is needed, write NONE.
+            Write any additional relevant information not covered by the document. If there is none, write NONE.
+
+            IMPORTANT:
+            - Always include both headings exactly as written.
+            - Never omit either heading.
+            - Do not put anything before DOCUMENT ANSWER.
+            - Do not change the heading names.
 
             Rules:
             1. Never invent facts from the document.
@@ -172,6 +187,8 @@ def chat():
         document_answer=""
         general_answer=""
 
+        print("FULL MODEL RESPONSE:",repr(answer))
+        
         lower_answer = answer.lower()
 
         doc_marker = "document answer:"
